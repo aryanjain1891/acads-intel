@@ -11,9 +11,9 @@ function daysUntil(dateStr: string): number {
   if (!dateStr) return Infinity;
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
+  const target = new Date(dateStr + "T00:00:00");
   if (isNaN(target.getTime())) return Infinity;
-  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.round((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function formatDate(dateStr: string): string {
