@@ -841,11 +841,9 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                                     return (
                                       <div className="mt-3 overflow-hidden rounded-lg border border-green-600/30">
                                         <div className="border-b border-green-600/20 bg-green-500/5 px-4 py-2 text-xs font-semibold text-green-600 uppercase tracking-wider">Deep Explainer</div>
-                                        <ResizablePanel defaultHeight={600}>
-                                          <div className="bg-background px-6 py-5">
-                                            <MarkdownRenderer content={mdPreviews[explainerKey] || "Loading..."} />
-                                          </div>
-                                        </ResizablePanel>
+                                        <div className="overflow-y-auto bg-background px-6 py-5" style={{ height: "600px", resize: "vertical", minHeight: "150px" }}>
+                                          <MarkdownRenderer content={mdPreviews[explainerKey] || "Loading..."} />
+                                        </div>
                                       </div>
                                     );
                                   })()}
