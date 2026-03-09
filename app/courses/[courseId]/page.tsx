@@ -826,13 +826,13 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                                     </div>
                                   </div>
                                   {openPreviews.has(`/api/files/${r.url}`) && (
-                                    <div className="mt-3 overflow-hidden rounded-lg border border-border">
+                                    <ResizablePanel defaultHeight={r.fileType?.startsWith("image/") ? 400 : 600} className="mt-3 rounded-lg border border-border overflow-hidden">
                                       {r.fileType?.startsWith("image/") ? (
-                                        <img src={`/api/files/${r.url}`} alt={r.title} className="max-h-[500px] w-full object-contain bg-background" />
+                                        <img src={`/api/files/${r.url}`} alt={r.title} className="h-full w-full object-contain bg-background" />
                                       ) : (
-                                        <iframe src={`/api/files/${r.url}`} title={r.title} className="h-[600px] w-full bg-white" />
+                                        <iframe src={`/api/files/${r.url}`} title={r.title} className="h-full w-full bg-white" />
                                       )}
-                                    </div>
+                                    </ResizablePanel>
                                   )}
                                   {(() => {
                                     const explainerUrl = explainerStatus[r.id]?.explainerUrl;

@@ -16,25 +16,24 @@ export default function ResizablePanel({
   className = "",
 }: ResizablePanelProps) {
   const [height, setHeight] = useState(defaultHeight);
-  const dragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const startH = useRef(0);
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      dragging.current = true;
+      setIsDragging(true);
       startY.current = e.clientY;
       startH.current = height;
 
       const onMouseMove = (ev: MouseEvent) => {
-        if (!dragging.current) return;
         const delta = ev.clientY - startY.current;
         setHeight(Math.max(minHeight, startH.current + delta));
       };
 
       const onMouseUp = () => {
-        dragging.current = false;
+        setIsDragging(false);
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
         document.body.style.cursor = "";
@@ -50,10 +49,13 @@ export default function ResizablePanel({
   );
 
   return (
-    <div className={className}>
+    <div className={className} style={{ position: "relative" }}>
       <div style={{ height }} className="overflow-y-auto overflow-x-hidden">
         {children}
       </div>
+      {isDragging && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 10, cursor: "row-resize" }} />
+      )}
       <div
         onMouseDown={onMouseDown}
         className="flex h-3 cursor-row-resize items-center justify-center border-t border-border/50 bg-surface/50 transition-colors hover:bg-surface-hover"
