@@ -967,9 +967,17 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                             className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${openPreviews.has(`/api/files/${p.url}`) ? "border-accent text-accent" : "border-border text-muted hover:border-accent hover:text-accent"}`}
                           >{openPreviews.has(`/api/files/${p.url}`) ? "Hide" : "Preview"}</button>
                         )}
+                        <button onClick={() => { setEditingResource(p.id); setEditResourceForm({ title: p.title, url: p.url || "" }); }} className="rounded-md border border-border px-2.5 py-1 text-xs text-muted hover:border-accent hover:text-accent transition-colors">Rename</button>
                         <button onClick={() => setConfirmDelete({ type: "resource", id: p.id, name: p.title })} className="text-xs text-danger hover:underline">Delete</button>
                       </div>
                     </div>
+                    {editingResource === p.id && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input value={editResourceForm.title} onChange={(e) => setEditResourceForm((f) => ({ ...f, title: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") updateResource(p.id); if (e.key === "Escape") setEditingResource(null); }} placeholder="Title" autoFocus className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-accent" />
+                        <button onClick={() => updateResource(p.id)} className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-white hover:bg-accent-hover">Save</button>
+                        <button onClick={() => setEditingResource(null)} className="rounded-md border border-border px-3 py-1 text-xs text-muted hover:text-foreground">Cancel</button>
+                      </div>
+                    )}
                     {openPreviews.has(`/api/files/${p.url}`) && (
                       <div className="mt-3 overflow-hidden rounded-lg border border-border">
                         <iframe src={`/api/files/${p.url}`} title={p.title} className="h-[600px] w-full bg-white" />
