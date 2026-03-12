@@ -8,8 +8,44 @@ import type { Resource } from "@/lib/types";
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
 
+async function syncRenamedFiles(resources: Resource[]): Promise<boolean> {
+  let changed = false;
+  const trackedUrls = new Set(resources.filter((r) => r.type === "file").map((r) => r.url));
+
+  for (const r of resources) {
+    if (r.type !== "file") continue;
+    const fullPath = path.join(CONTENT_DIR, r.url);
+    try {
+      await fs.access(fullPath);
+    } catch {
+      const dir = path.dirname(fullPath);
+      const ext = path.extname(r.url);
+      try {
+        const files = await fs.readdir(dir);
+        const candidates = files.filter(
+          (f) => path.extname(f) === ext && !trackedUrls.has(path.join(path.dirname(r.url), f))
+        );
+        if (candidates.length === 1) {
+          const newFilename = candidates[0];
+          const newUrl = path.join(path.dirname(r.url), newFilename);
+          trackedUrls.delete(r.url);
+          trackedUrls.add(newUrl);
+          r.url = newUrl;
+          r.title = path.basename(newFilename, ext);
+          changed = true;
+        }
+      } catch { /* directory doesn't exist */ }
+    }
+  }
+  return changed;
+}
+
 export async function GET(req: NextRequest) {
   const resources = await readJSON<Resource>("resources.json");
+
+  const synced = await syncRenamedFiles(resources);
+  if (synced) await writeJSON("resources.json", resources);
+
   const courseId = req.nextUrl.searchParams.get("courseId");
   if (courseId) {
     const filtered = resources.filter((r) => r.courseId === courseId);
