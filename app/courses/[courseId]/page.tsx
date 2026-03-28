@@ -104,6 +104,10 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     fetch(`/api/deep-explain/status?courseId=${courseId}`).then((r) => r.json()).then(setExplainerStatus).catch(() => {});
   }, [courseId]);
 
+  const refreshExplainerStatus = useCallback(() => {
+    fetch(`/api/deep-explain/status?courseId=${courseId}`).then((r) => r.json()).then(setExplainerStatus).catch(() => {});
+  }, [courseId]);
+
   useEffect(() => { reload(); }, [reload]);
 
   if (!course) {
@@ -210,6 +214,10 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     setResourceFile(null);
     setShowAddResource(false);
     reload();
+    if (resourceType === "file") {
+      setTimeout(refreshExplainerStatus, 8000);
+      setTimeout(refreshExplainerStatus, 20000);
+    }
   };
 
   const addPYQ = async () => {
@@ -388,6 +396,8 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     setBulkTitles([]);
     setShowBulkUpload(false);
     reload();
+    setTimeout(refreshExplainerStatus, 8000);
+    setTimeout(refreshExplainerStatus, 20000);
   };
 
   const isPreviewable = (fileType: string | null, url: string) => {
