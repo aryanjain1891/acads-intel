@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { readJSON, writeJSON, saveUpload } from "@/lib/storage";
+import { readJSON, writeJSON, updateJSON, saveUpload, MAX_UPLOAD_BYTES } from "@/lib/storage";
 import { triggerOCR } from "@/lib/ocr";
 import type { Resource } from "@/lib/types";
 
@@ -87,8 +87,6 @@ export async function POST(req: NextRequest) {
   const isSolution = formData.get("isSolution") === "true";
   const solutionStatus = (formData.get("solutionStatus") as Resource["solutionStatus"]) || undefined;
   const solutionId = (formData.get("solutionId") as string) || undefined;
-  const resources = await readJSON<Resource>("resources.json");
-  const maxOrder = resources.filter((r) => r.courseId === courseId).reduce((m, r) => Math.max(m, r.order ?? 0), -1);
 
   if (type === "link") {
     const title = formData.get("title") as string | null;
@@ -99,19 +97,22 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const resource: Resource = {
-      id: uuidv4(),
-      courseId: String(courseId),
-      title: String(title),
-      type: "link",
-      url: String(url),
-      fileType: null,
-      folder,
-      order: maxOrder + 1,
-    };
-    resources.push(resource);
-    await writeJSON("resources.json", resources);
-    return NextResponse.json(resource, { status: 201 });
+    let created!: Resource;
+    await updateJSON<Resource>("resources.json", (resources) => {
+      const maxOrder = resources.filter((r) => r.courseId === courseId).reduce((m, r) => Math.max(m, r.order ?? 0), -1);
+      created = {
+        id: uuidv4(),
+        courseId: String(courseId),
+        title: String(title),
+        type: "link",
+        url: String(url),
+        fileType: null,
+        folder,
+        order: maxOrder + 1,
+      };
+      return [...resources, created];
+    });
+    return NextResponse.json(created, { status: 201 });
   }
 
   if (type === "file") {
@@ -123,13 +124,20 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    // Pre-buffer all files before any disk/conversion work to avoid
-    // concurrent LibreOffice calls which fail silently
+    for (const f of files) {
+      if (f.size > MAX_UPLOAD_BYTES) {
+        return NextResponse.json(
+          { error: `File "${f.name}" exceeds ${Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))}MB limit` },
+          { status: 413 }
+        );
+      }
+    }
     const buffered = await Promise.all(
       files.map(async (f) => ({ file: f, buffer: Buffer.from(await f.arrayBuffer()) }))
     );
 
-    const created: Resource[] = [];
+    type Saved = { relativePath: string; convertedFilename: string; title: string; fileType: string | null };
+    const saved: Saved[] = [];
     for (let i = 0; i < buffered.length; i++) {
       const { file, buffer } = buffered[i];
       const title = titles[i] || file.name;
@@ -150,22 +158,26 @@ export async function POST(req: NextRequest) {
           // keep original filename if rename fails
         }
       }
+      saved.push({ relativePath: finalUrl, convertedFilename, title, fileType });
+    }
 
-      const resource: Resource = {
+    let created: Resource[] = [];
+    await updateJSON<Resource>("resources.json", (resources) => {
+      const maxOrder = resources.filter((r) => r.courseId === courseId).reduce((m, r) => Math.max(m, r.order ?? 0), -1);
+      created = saved.map((s, i) => ({
         id: uuidv4(),
         courseId: String(courseId),
-        title: String(title),
+        title: s.title,
         type: "file",
-        url: finalUrl,
-        fileType,
+        url: s.relativePath,
+        fileType: s.fileType,
         folder,
         order: maxOrder + 1 + i,
         ...(isPYQ && { isPYQ: true, ...(isSolution && { isSolution: true }), solutionStatus, solutionId }),
-      };
-      resources.push(resource);
-      created.push(resource);
-    }
-    await writeJSON("resources.json", resources);
+      }));
+      return [...resources, ...created];
+    });
+
     for (const r of created) {
       if (r.fileType === "application/pdf") {
         triggerOCR(r.url);

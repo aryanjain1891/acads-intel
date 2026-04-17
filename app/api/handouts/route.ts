@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import { readJSON, writeJSON, saveUpload } from "@/lib/storage";
+import { readJSON, updateJSON, saveUpload, MAX_UPLOAD_BYTES } from "@/lib/storage";
 import type { Handout } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -25,11 +25,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { error: `File exceeds ${Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))}MB limit` },
+      { status: 413 }
+    );
+  }
+
   const filename = file.name;
   const buffer = Buffer.from(await file.arrayBuffer());
   const { relativePath, convertedFilename } = await saveUpload("handouts", courseId, filename, buffer);
 
-  const handouts = await readJSON<Handout>("handouts.json");
   const displayName = filename.replace(/\.[^/.]+$/, "") + (convertedFilename !== filename ? " (PDF)" : "");
   const handout: Handout = {
     id: uuidv4(),
@@ -38,7 +44,6 @@ export async function POST(req: NextRequest) {
     displayName,
     path: relativePath,
   };
-  handouts.push(handout);
-  await writeJSON("handouts.json", handouts);
+  await updateJSON<Handout>("handouts.json", (items) => [...items, handout]);
   return NextResponse.json(handout, { status: 201 });
 }

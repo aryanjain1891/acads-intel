@@ -105,19 +105,30 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     fetch(`/api/deep-explain/status?courseId=${courseId}`).then((r) => r.json()).then(setExplainerStatus).catch(() => {});
   }, [courseId]);
 
-  const refreshExplainerStatus = useCallback(() => {
-    fetch(`/api/deep-explain/status?courseId=${courseId}`).then((r) => r.json()).then(setExplainerStatus).catch(() => {});
+  const refreshExplainerStatus = useCallback((signal?: AbortSignal) => {
+    fetch(`/api/deep-explain/status?courseId=${courseId}`, { signal })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!signal?.aborted) setExplainerStatus(data);
+      })
+      .catch(() => {});
   }, [courseId]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  // Auto-poll: while any PDF resource lacks a transcript, refetch status periodically
+  // Auto-poll: while any PDF resource lacks a transcript, refetch status periodically.
+  // AbortController prevents setState-after-unmount and cancels in-flight fetches
+  // when the user navigates away or the deps change.
   useEffect(() => {
     const pdfResources = resources.filter((r) => r.type === "file" && r.url.endsWith(".pdf"));
     const missingTranscript = pdfResources.filter((r) => !explainerStatus[r.id]?.hasTranscript);
     if (missingTranscript.length === 0) return;
-    const interval = setInterval(refreshExplainerStatus, 10000);
-    return () => clearInterval(interval);
+    const controller = new AbortController();
+    const interval = setInterval(() => refreshExplainerStatus(controller.signal), 10000);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [resources, explainerStatus, refreshExplainerStatus]);
 
   if (!course) {
@@ -153,13 +164,29 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
 
   const addScore = async () => {
     if (!scoreForm.name.trim()) { toast("Component name is required", "error"); return; }
-    if (!scoreForm.weightage) { toast("Weightage is required", "error"); return; }
+    if (!scoreForm.weightage || scoreForm.weightage <= 0) { toast("Weightage must be greater than 0", "error"); return; }
+    const rawMax = String(scoreForm.maxMarks ?? "").trim();
+    const rawObtained = String(scoreForm.obtained ?? "").trim();
+    const maxMarks = rawMax === "" ? null : Number(rawMax);
+    const obtained = rawObtained === "" ? null : Number(rawObtained);
+    if (maxMarks !== null && (!Number.isFinite(maxMarks) || maxMarks <= 0)) {
+      toast("Max marks must be a positive number", "error");
+      return;
+    }
+    if (obtained !== null && !Number.isFinite(obtained)) {
+      toast("Obtained must be a number", "error");
+      return;
+    }
+    if (obtained !== null && maxMarks !== null && obtained > maxMarks) {
+      toast("Obtained cannot exceed max marks", "error");
+      return;
+    }
     const res = await apiPost("/api/scores", {
       courseId,
       name: scoreForm.name,
       weightage: scoreForm.weightage,
-      maxMarks: scoreForm.maxMarks ? Number(scoreForm.maxMarks) : null,
-      obtained: scoreForm.obtained ? Number(scoreForm.obtained) : null,
+      maxMarks,
+      obtained,
     });
     if (!res.ok) { toast(res.error, "error"); return; }
     toast("Component added");
@@ -527,8 +554,14 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     else if (type === "deadline") doDeleteDeadline(id);
   };
 
-  const doneScores = scores.filter((s) => s.obtained !== null && s.maxMarks);
-  const weightedTotal = doneScores.reduce((a, s) => a + (s.obtained! / s.maxMarks!) * s.weightage, 0);
+  const doneScores = scores.filter(
+    (s) => s.obtained !== null && s.maxMarks !== null && s.maxMarks > 0
+  );
+  const weightedTotal = doneScores.reduce((a, s) => {
+    const max = s.maxMarks ?? 0;
+    const got = s.obtained ?? 0;
+    return max > 0 ? a + (got / max) * s.weightage : a;
+  }, 0);
   const completedWeight = doneScores.reduce((a, s) => a + s.weightage, 0);
   const totalWeight = scores.reduce((a, s) => a + s.weightage, 0);
 

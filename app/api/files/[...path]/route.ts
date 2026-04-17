@@ -23,20 +23,34 @@ function getContentTypeFromExtension(filename: string): string {
   return map[ext] ?? "application/octet-stream";
 }
 
+const CONTENT_ROOT = path.resolve(process.cwd(), "content");
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path: pathSegments } = await params;
+  if (pathSegments.some((s) => s.includes("\0") || s === ".." || s.startsWith("/"))) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+  }
   const relativePath = path.join(...pathSegments);
   const filePath = await getFilePath(relativePath);
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(CONTENT_ROOT + path.sep) && resolved !== CONTENT_ROOT) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
-    const buffer = await fs.readFile(filePath);
+    const stat = await fs.stat(resolved);
+    if (!stat.isFile()) {
+      return NextResponse.json({ error: "Not a file" }, { status: 400 });
+    }
+    const buffer = await fs.readFile(resolved);
     const contentType = getContentTypeFromExtension(pathSegments[pathSegments.length - 1] ?? "");
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": contentType,
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {
