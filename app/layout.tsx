@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import ApiKeyBanner from "@/components/ApiKeyBanner";
 import { ToastProvider } from "@/components/Toast";
 
 const geistSans = Geist({
@@ -34,6 +35,7 @@ export default function RootLayout({
           <div className="flex h-screen overflow-hidden">
             <Sidebar />
             <main className="flex-1 overflow-y-auto">
+              <ApiKeyBanner />
               <div className="mx-auto max-w-6xl px-6 py-8">
                 {children}
               </div>

@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import ResizablePanel from "@/components/ResizablePanel";
+import FilePreview from "@/components/FilePreview";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import SortableItem from "@/components/SortableItem";
@@ -840,11 +841,8 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                                   </div>
                                   {openPreviews.has(`/api/files/${r.url}`) && (
                                     <ResizablePanel defaultHeight={r.fileType?.startsWith("image/") ? 400 : 600} className="mt-3 rounded-lg border border-border overflow-hidden">
-                                      {r.fileType?.startsWith("image/") ? (
-                                        <img src={`/api/files/${r.url}`} alt={r.title} className="h-full w-full object-contain bg-background" />
-                                      ) : (
-                                        <iframe src={`/api/files/${r.url}`} title={r.title} className="h-full w-full bg-white" />
-                                      )}
+                                      <FilePreview url={`/api/files/${r.url}`} fileType={r.fileType} filename={r.url || r.title} />
+
                                     </ResizablePanel>
                                   )}
                                   {(() => {
@@ -992,8 +990,8 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                       </div>
                     )}
                     {openPreviews.has(`/api/files/${p.url}`) && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-border">
-                        <iframe src={`/api/files/${p.url}`} title={p.title} className="h-[600px] w-full bg-white" />
+                      <div className="mt-3 h-[600px] overflow-hidden rounded-lg border border-border">
+                        <FilePreview url={`/api/files/${p.url}`} filename={p.url || p.title} />
                       </div>
                     )}
                   </div>
@@ -1092,8 +1090,8 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                       </div>
                     </div>
                     {openPreviews.has(`/api/files/${h.path}`) && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-border">
-                        <iframe src={`/api/files/${h.path}`} title={h.displayName || h.filename} className="h-[600px] w-full bg-white" />
+                      <div className="mt-3 h-[600px] overflow-hidden rounded-lg border border-border">
+                        <FilePreview url={`/api/files/${h.path}`} filename={h.path || h.filename} />
                       </div>
                     )}
                   </>
