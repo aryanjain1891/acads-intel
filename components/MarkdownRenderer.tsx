@@ -9,41 +9,67 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Components } from "react-markdown";
 
+function sanitizeMermaid(chart: string): string {
+  let s = chart;
+  // Convert `A -- "label" --> B` to `A -->|"label"| B` (more robust with special chars)
+  s = s.replace(/--\s*"([^"]+)"\s*-->/g, '-->|"$1"|');
+  // Convert `A -- label --> B` (unquoted) to `A -->|"label"| B` for labels containing dashes/slashes
+  s = s.replace(/--\s+([^-|>\n"]+?)\s+-->/g, (match, label) => {
+    if (/[-/]/.test(label)) return `-->|"${label.trim()}"|`;
+    return match;
+  });
+  // Strip stray HTML tags in labels (<br/>, <b>, etc.)
+  s = s.replace(/<[^>]+>/g, " ");
+  return s;
+}
+
+function stripEdgeLabels(chart: string): string {
+  // Remove edge labels as a last-resort retry
+  return chart.replace(/-->\|[^|]*\|/g, "-->").replace(/--\s+"[^"]*"\s+-->/g, "-->");
+}
+
 function MermaidBlock({ chart }: { chart: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>("");
   const [failed, setFailed] = useState(false);
 
   const render = useCallback(async () => {
-    try {
-      const mermaid = (await import("mermaid")).default;
-      mermaid.initialize({
-        startOnLoad: false,
-        suppressErrorRendering: true,
-        theme: "dark",
-        themeVariables: {
-          darkMode: true,
-          background: "#1a1a2e",
-          primaryColor: "#6366f1",
-          primaryTextColor: "#e2e8f0",
-          primaryBorderColor: "#4f46e5",
-          lineColor: "#64748b",
-          secondaryColor: "#1e293b",
-          tertiaryColor: "#0f172a",
-          fontFamily: "ui-sans-serif, system-ui, sans-serif",
-          fontSize: "14px",
-        },
-      });
-      const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-      const { svg: rendered } = await mermaid.render(id, chart);
-      if (rendered.includes("Syntax error") || rendered.includes("error-icon")) {
-        setFailed(true);
-      } else {
-        setSvg(rendered);
-      }
-    } catch {
-      setFailed(true);
+    const mermaid = (await import("mermaid")).default;
+    mermaid.initialize({
+      startOnLoad: false,
+      suppressErrorRendering: true,
+      theme: "dark",
+      themeVariables: {
+        darkMode: true,
+        background: "#1a1a2e",
+        primaryColor: "#6366f1",
+        primaryTextColor: "#e2e8f0",
+        primaryBorderColor: "#4f46e5",
+        lineColor: "#64748b",
+        secondaryColor: "#1e293b",
+        tertiaryColor: "#0f172a",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        fontSize: "14px",
+      },
+    });
+
+    const attempts = [
+      sanitizeMermaid(chart),
+      stripEdgeLabels(sanitizeMermaid(chart)),
+      chart,
+    ];
+
+    for (const source of attempts) {
+      try {
+        const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
+        const { svg: rendered } = await mermaid.render(id, source);
+        if (!rendered.includes("Syntax error") && !rendered.includes("error-icon")) {
+          setSvg(rendered);
+          return;
+        }
+      } catch { /* try next */ }
     }
+    setFailed(true);
   }, [chart]);
 
   useEffect(() => { render(); }, [render]);

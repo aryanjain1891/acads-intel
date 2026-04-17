@@ -48,14 +48,21 @@ const DEEP_EXPLAIN_PROMPT = `You are an expert tutor creating a comprehensive de
 - When the content involves process flows, state transitions, resource allocation, or any concept that benefits from a visual, include a Mermaid diagram in a \`\`\`mermaid code block.
 - Use simple diagram types: \`graph TD\`, \`graph LR\`, \`sequenceDiagram\`, \`stateDiagram-v2\`.
 - Keep diagrams simple and focused — one concept per diagram.
-- STRICT syntax rules (mermaid is very picky):
+- STRICT syntax rules (mermaid is very picky — violating these will break rendering):
+  - **Edge labels MUST use pipe syntax:** \`A -->|"label"| B\` — NEVER use \`A -- "label" --> B\` (breaks when label contains dashes, slashes, or quotes)
   - Node IDs: no spaces, use camelCase (e.g., \`processA\`, \`readyQueue\`)
-  - Labels with special characters: use double quotes (e.g., \`A["Process (main)"]\`)
-  - NO HTML tags in labels (no \`<div>\`, \`<br/>\`, \`<b>\` etc.)
+  - Node labels with special characters: wrap in double quotes (e.g., \`A["Process (main)"]\`)
+  - NO HTML tags in labels — no \`<div>\`, \`<br/>\`, \`<b>\`, \`<br>\` etc. Use plain text only.
   - NO \`direction\` keyword inside subgraphs
-  - NO parentheses in label text without quoting the whole label
+  - NO semicolons at end of lines (optional and can cause issues)
   - Prefer flat graphs over deeply nested subgraphs
-  - Test-worthy example: \`graph TD; A["Start"] --> B["Process"]; B --> C["End"]\`
+  - Good example:
+    \`\`\`
+    graph TD
+        A["Source (file.c)"] -->|"compile"| B{"Compiler"}
+        B -->|"success"| C["Object file"]
+        B -->|"error"| D["Error messages"]
+    \`\`\`
 - Only include diagrams when they genuinely aid understanding — not every section needs one.
 
 ### General markdown
