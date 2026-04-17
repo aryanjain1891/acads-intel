@@ -54,6 +54,7 @@ const DEEP_EXPLAIN_PROMPT = `You are an expert tutor creating a comprehensive de
   - Node labels with special characters: wrap in double quotes (e.g., \`A["Process (main)"]\`)
   - NO HTML tags in labels — no \`<div>\`, \`<br/>\`, \`<b>\`, \`<br>\` etc. Use plain text only.
   - NO \`direction\` keyword inside subgraphs
+  - Subgraphs: use \`subgraph id ["Label with spaces"]\` — NEVER \`subgraph Label with spaces\`
   - NO semicolons at end of lines (optional and can cause issues)
   - Prefer flat graphs over deeply nested subgraphs
   - Good example:

@@ -20,6 +20,17 @@ function sanitizeMermaid(chart: string): string {
   });
   // Strip stray HTML tags in labels (<br/>, <b>, etc.)
   s = s.replace(/<[^>]+>/g, " ");
+  // Fix subgraph with spaces in identifier: `subgraph Foo Bar` -> `subgraph sgN [Foo Bar]`
+  let sgCounter = 0;
+  s = s.replace(/^(\s*)subgraph\s+([^\[\n]+?)\s*$/gm, (_m, indent, name) => {
+    const trimmed = name.trim();
+    if (/\s/.test(trimmed)) {
+      return `${indent}subgraph sg${sgCounter++} ["${trimmed}"]`;
+    }
+    return `${indent}subgraph ${trimmed}`;
+  });
+  // Remove `direction TB/LR/BT/RL` lines inside subgraphs (often breaks parsing)
+  s = s.replace(/^\s*direction\s+(TB|BT|LR|RL|TD)\s*$/gm, "");
   return s;
 }
 
