@@ -11,16 +11,42 @@ import type { Components } from "react-markdown";
 
 function sanitizeMermaid(chart: string): string {
   let s = chart;
-  // Convert `A -- "label" --> B` to `A -->|"label"| B` (more robust with special chars)
-  s = s.replace(/--\s*"([^"]+)"\s*-->/g, '-->|"$1"|');
-  // Convert `A -- label --> B` (unquoted) to `A -->|"label"| B` for labels containing dashes/slashes
-  s = s.replace(/--\s+([^-|>\n"]+?)\s+-->/g, (match, label) => {
-    if (/[-/]/.test(label)) return `-->|"${label.trim()}"|`;
-    return match;
-  });
-  // Strip stray HTML tags in labels (<br/>, <b>, etc.)
+
+  // Strip stray HTML tags in labels (<br/>, <b>, <div style='...'>, etc.) FIRST
   s = s.replace(/<[^>]+>/g, " ");
-  // Fix subgraph with spaces in identifier: `subgraph Foo Bar` -> `subgraph sgN [Foo Bar]`
+  // Collapse multiple spaces inside labels
+  s = s.replace(/"\s+([^"]+?)\s+"/g, (_m, inner) => `"${inner.replace(/\s+/g, " ").trim()}"`);
+
+  // Remove `direction TB/LR/BT/RL/TD` lines (inside subgraphs these break parsing)
+  s = s.replace(/^\s*direction\s+(TB|BT|LR|RL|TD)\s*$/gm, "");
+
+  // Strip `style` and `classDef` directives (often cause parse issues)
+  s = s.replace(/^\s*style\s+\S+.*$/gm, "");
+  s = s.replace(/^\s*classDef\s+.*$/gm, "");
+  s = s.replace(/^\s*linkStyle\s+.*$/gm, "");
+
+  // Convert `A -- "label" --> B` to `A -->|"label"| B`
+  s = s.replace(/--\s*"([^"]+)"\s*-->/g, '-->|"$1"|');
+  // Convert `A -- label --> B` (unquoted) to pipe form for ANY label (not just dashes)
+  s = s.replace(/--\s+([^-|>\n"]+?)\s+-->/g, (_m, label) => `-->|"${label.trim()}"|`);
+
+  // Normalize all node shape syntaxes to safe bracket-quoted form `X["label"]`
+  // (("text"))  double-circle -> ["text"]
+  s = s.replace(/(\b\w+)\(\(\s*"([^"]*)"\s*\)\)/g, '$1["$2"]');
+  // (("text"))  unquoted
+  s = s.replace(/(\b\w+)\(\(([^()]+)\)\)/g, '$1["$2"]');
+  // >("text")  flag shape -> ["text"]
+  s = s.replace(/(\b\w+)>\s*"([^"]*)"\s*\]/g, '$1["$2"]');
+  // ("text")  rounded
+  s = s.replace(/(\b\w+)\(\s*"([^"]*)"\s*\)/g, '$1["$2"]');
+  // (unquoted text)  rounded
+  s = s.replace(/(\b\w+)\(([^()\n]+)\)/g, '$1["$2"]');
+  // {unquoted}  rhombus - keep only simple one-word labels
+  s = s.replace(/(\b\w+)\{([^{}"\n]+)\}/g, (_m, id, text) => {
+    return `${id}{"${text.trim()}"}`;
+  });
+
+  // Fix subgraph with spaces in identifier: `subgraph Foo Bar` -> `subgraph sgN ["Foo Bar"]`
   let sgCounter = 0;
   s = s.replace(/^(\s*)subgraph\s+([^\[\n]+?)\s*$/gm, (_m, indent, name) => {
     const trimmed = name.trim();
@@ -29,8 +55,13 @@ function sanitizeMermaid(chart: string): string {
     }
     return `${indent}subgraph ${trimmed}`;
   });
-  // Remove `direction TB/LR/BT/RL` lines inside subgraphs (often breaks parsing)
-  s = s.replace(/^\s*direction\s+(TB|BT|LR|RL|TD)\s*$/gm, "");
+
+  // Remove trailing semicolons (inconsistent support)
+  s = s.replace(/;\s*$/gm, "");
+
+  // Collapse multiple blank lines
+  s = s.replace(/\n{3,}/g, "\n\n");
+
   return s;
 }
 
@@ -64,20 +95,16 @@ function MermaidBlock({ chart }: { chart: string }) {
       },
     });
 
-    const attempts = [
-      sanitizeMermaid(chart),
-      stripEdgeLabels(sanitizeMermaid(chart)),
-      chart,
-    ];
+    const sanitized = sanitizeMermaid(chart);
+    const attempts = [sanitized, stripEdgeLabels(sanitized), chart];
 
     for (const source of attempts) {
       try {
+        await mermaid.parse(source);
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
         const { svg: rendered } = await mermaid.render(id, source);
-        if (!rendered.includes("Syntax error") && !rendered.includes("error-icon")) {
-          setSvg(rendered);
-          return;
-        }
+        setSvg(rendered);
+        return;
       } catch { /* try next */ }
     }
     setFailed(true);
