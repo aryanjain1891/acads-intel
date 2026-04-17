@@ -1,1 +1,0 @@
-{"nodes": [{"id": "resizablepanel", "label": "ResizablePanel.tsx", "file_type": "code", "source_file": "components/ResizablePanel.tsx", "source_location": "L1"}], "edges": [{"source": "resizablepanel", "target": "react", "relation": "imports_from", "confidence": "EXTRACTED", "source_file": "components/ResizablePanel.tsx", "source_location": "L3", "weight": 1.0}]}
