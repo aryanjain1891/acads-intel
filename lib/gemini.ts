@@ -55,6 +55,8 @@ const DEEP_EXPLAIN_PROMPT = `You are an expert tutor creating a comprehensive de
   - NO HTML tags in labels — no \`<div>\`, \`<br/>\`, \`<b>\`, \`<br>\` etc. Use plain text only.
   - NO \`direction\` keyword inside subgraphs
   - Subgraphs: use \`subgraph id ["Label with spaces"]\` — NEVER \`subgraph Label with spaces\`
+  - NO \`style\`, \`classDef\`, or \`linkStyle\` directives
+  - Use \`["text"]\` rectangular shape for ALL nodes — avoid rounded \`(text)\` or circle \`((text))\` shapes (they fail with special characters like &, /, etc.)
   - NO semicolons at end of lines (optional and can cause issues)
   - Prefer flat graphs over deeply nested subgraphs
   - Good example:
