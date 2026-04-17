@@ -1,0 +1,11 @@
+# Course-specific resources (not code)
+content/resources/
+content/handouts/
+content/plans/
+assignments/
+data/
+
+# Build & dependencies
+node_modules/
+.next/
+package-lock.json
