@@ -40,6 +40,9 @@ export async function writePlan(courseId: string, content: string): Promise<void
   await fs.writeFile(path.join(dir, `${courseId}.md`), content, "utf-8");
 }
 
+// Optional LibreOffice integration: if soffice is present on the machine, we
+// auto-convert Office files to PDF on upload for nicer inline previews. If not,
+// the file is saved as-is and the client-side renderer handles preview.
 const SOFFICE_PATHS = [
   "/Applications/LibreOffice.app/Contents/MacOS/soffice",
   "/usr/bin/soffice",

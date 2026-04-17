@@ -547,25 +547,25 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
           <PromptButton
             label="Ask about notes"
             icon="💬"
-            prompt={`@content/resources/${courseId}/_transcripts_index.md answer my question using the course transcripts: `}
+            prompt={`I'll attach my course transcripts. Please answer this question using them: `}
             small
           />
           <PromptButton
             label="Summarize modules"
             icon="📝"
-            prompt={`@content/resources/${courseId} summarize the key concepts from all module notes`}
+            prompt={`I'll attach my course module notes. Please summarize the key concepts from all the modules.`}
             small
           />
           <PromptButton
             label="Exam prep"
             icon="📖"
-            prompt={`@content/resources/${courseId} help me prepare for the upcoming exam — list important topics, formulas, and concepts from all modules`}
+            prompt={`I'll attach my course module notes. Please help me prepare for my upcoming exam — list important topics, formulas, and concepts to review.`}
             small
           />
           <PromptButton
             label="Deep Explain"
             icon="🧠"
-            prompt={`@content/resources/${courseId}/_transcripts_index.md Read the lecture transcript I specify and create a comprehensive deep explanation. Start from the beginning and explain every concept in insane depth. Be as detailed as possible. Include a notation/abbreviation table, numbered "Part N:" sections, step-by-step walkthroughs of every example, and "Feel:" callouts with intuitive analogies. Cover everything — do not skip or summarize any topic. Save the output as {ModuleName}-Deep-Explanation.md in the same folder. The transcript to explain: `}
+            prompt={`I'll attach a lecture transcript. Please create a comprehensive deep explanation. Start from the beginning and explain every concept in depth. Include a notation/abbreviation table, numbered "Part N:" sections, step-by-step walkthroughs of every example, and "Feel:" callouts with intuitive analogies. Cover everything — do not skip or summarize any topic.`}
             small
           />
         </div>
@@ -890,13 +890,13 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
             <PromptButton
               label="Solve PYQ"
               icon="✍️"
-              prompt={`@content/resources/${courseId} solve the questions from the PYQ papers using concepts from the module notes. Show step-by-step solutions.`}
+              prompt={`I'll attach my past-year question papers and module notes. Please solve the questions using concepts from the notes — show step-by-step solutions.`}
               small
             />
             <PromptButton
               label="PYQ Practice Plan"
               icon="📋"
-              prompt={`@content/resources/${courseId} create a PYQ practice plan — list all question papers, their solution availability, and suggest a day-by-day study schedule using the module notes`}
+              prompt={`I'll attach my past-year question papers and module notes. Please create a PYQ practice plan — list the papers, which have solutions available, and suggest a day-by-day study schedule using the notes.`}
               small
             />
           </div>
@@ -1175,7 +1175,7 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                   <PromptButton
                     label="Ask about this"
                     icon="💬"
-                    prompt={`@assignments/${courseId}/${a} help me with this assignment`}
+                    prompt={`I'll attach my assignment files. Please help me work through this assignment step by step.`}
                     small
                   />
                 </div>
