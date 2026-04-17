@@ -123,11 +123,16 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    // Pre-buffer all files before any disk/conversion work to avoid
+    // concurrent LibreOffice calls which fail silently
+    const buffered = await Promise.all(
+      files.map(async (f) => ({ file: f, buffer: Buffer.from(await f.arrayBuffer()) }))
+    );
+
     const created: Resource[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let i = 0; i < buffered.length; i++) {
+      const { file, buffer } = buffered[i];
       const title = titles[i] || file.name;
-      const buffer = Buffer.from(await file.arrayBuffer());
       const { relativePath, convertedFilename } = await saveUpload("resources", courseId, file.name, buffer);
       const fileType = getFileTypeFromExtension(convertedFilename);
 
