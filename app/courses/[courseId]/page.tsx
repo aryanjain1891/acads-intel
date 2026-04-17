@@ -110,6 +110,15 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
 
   useEffect(() => { reload(); }, [reload]);
 
+  // Auto-poll: while any PDF resource lacks a transcript, refetch status periodically
+  useEffect(() => {
+    const pdfResources = resources.filter((r) => r.type === "file" && r.url.endsWith(".pdf"));
+    const missingTranscript = pdfResources.filter((r) => !explainerStatus[r.id]?.hasTranscript);
+    if (missingTranscript.length === 0) return;
+    const interval = setInterval(refreshExplainerStatus, 10000);
+    return () => clearInterval(interval);
+  }, [resources, explainerStatus, refreshExplainerStatus]);
+
   if (!course) {
     return <div className="py-20 text-center text-muted">Loading course...</div>;
   }
@@ -214,10 +223,6 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     setResourceFile(null);
     setShowAddResource(false);
     reload();
-    if (resourceType === "file") {
-      setTimeout(refreshExplainerStatus, 8000);
-      setTimeout(refreshExplainerStatus, 20000);
-    }
   };
 
   const addPYQ = async () => {
@@ -396,8 +401,6 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     setBulkTitles([]);
     setShowBulkUpload(false);
     reload();
-    setTimeout(refreshExplainerStatus, 8000);
-    setTimeout(refreshExplainerStatus, 20000);
   };
 
   const isPreviewable = (fileType: string | null, url: string) => {
