@@ -547,25 +547,25 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
           <PromptButton
             label="Ask about notes"
             icon="💬"
-            prompt={`@4-2-acads/content/resources/${courseId}/_transcripts_index.md answer my question using the course transcripts: `}
+            prompt={`@content/resources/${courseId}/_transcripts_index.md answer my question using the course transcripts: `}
             small
           />
           <PromptButton
             label="Summarize modules"
             icon="📝"
-            prompt={`@4-2-acads/content/resources/${courseId} summarize the key concepts from all module notes`}
+            prompt={`@content/resources/${courseId} summarize the key concepts from all module notes`}
             small
           />
           <PromptButton
             label="Exam prep"
             icon="📖"
-            prompt={`@4-2-acads/content/resources/${courseId} help me prepare for the upcoming exam — list important topics, formulas, and concepts from all modules`}
+            prompt={`@content/resources/${courseId} help me prepare for the upcoming exam — list important topics, formulas, and concepts from all modules`}
             small
           />
           <PromptButton
             label="Deep Explain"
             icon="🧠"
-            prompt={`@4-2-acads/content/resources/${courseId}/_transcripts_index.md Read the lecture transcript I specify and create a comprehensive deep explanation. Start from the beginning and explain every concept in insane depth. Be as detailed as possible. Include a notation/abbreviation table, numbered "Part N:" sections, step-by-step walkthroughs of every example, and "Feel:" callouts with intuitive analogies. Cover everything — do not skip or summarize any topic. Save the output as {ModuleName}-Deep-Explanation.md in the same folder. The transcript to explain: `}
+            prompt={`@content/resources/${courseId}/_transcripts_index.md Read the lecture transcript I specify and create a comprehensive deep explanation. Start from the beginning and explain every concept in insane depth. Be as detailed as possible. Include a notation/abbreviation table, numbered "Part N:" sections, step-by-step walkthroughs of every example, and "Feel:" callouts with intuitive analogies. Cover everything — do not skip or summarize any topic. Save the output as {ModuleName}-Deep-Explanation.md in the same folder. The transcript to explain: `}
             small
           />
         </div>
@@ -890,13 +890,13 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
             <PromptButton
               label="Solve PYQ"
               icon="✍️"
-              prompt={`@4-2-acads/content/resources/${courseId} solve the questions from the PYQ papers using concepts from the module notes. Show step-by-step solutions.`}
+              prompt={`@content/resources/${courseId} solve the questions from the PYQ papers using concepts from the module notes. Show step-by-step solutions.`}
               small
             />
             <PromptButton
               label="PYQ Practice Plan"
               icon="📋"
-              prompt={`@4-2-acads/content/resources/${courseId} create a PYQ practice plan — list all question papers, their solution availability, and suggest a day-by-day study schedule using the module notes`}
+              prompt={`@content/resources/${courseId} create a PYQ practice plan — list all question papers, their solution availability, and suggest a day-by-day study schedule using the module notes`}
               small
             />
           </div>
@@ -1175,7 +1175,7 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
                   <PromptButton
                     label="Ask about this"
                     icon="💬"
-                    prompt={`@4-2-acads/assignments/${courseId}/${a} help me with this assignment`}
+                    prompt={`@assignments/${courseId}/${a} help me with this assignment`}
                     small
                   />
                 </div>

@@ -1,80 +1,85 @@
-# 4-2 Acads
+# Acads Intel
 
-A local-first academic tracker that puts your entire semester into one clean interface. Track courses, exams, scores, resources, handouts, study plans, and assignments — with Cursor IDE and AI integration.
+Your whole semester, in one clean app — running on your laptop.
 
-## Features
+Add your courses. Track your grades as the term goes on. Upload your lecture notes and handouts. Plan what you need to study. See every exam and deadline coming up, on a calendar. Hand your notes to your AI coding assistant when you want help understanding something.
 
-- **Dashboard** — Upcoming exams and deadlines at a glance, course cards with weighted scores
-- **Course Management** — Add courses with custom evaluation structures (user-defined components and weights)
-- **Exam & Deadline Tracking** — Quiz, midsem, endsem dates with calendar view and countdown
-- **Score Tracker** — Define grading components per course, enter marks, see live weighted percentages
-- **Resources** — Upload files or add links, organize into collapsible folders, drag-to-reorder, bulk upload, inline PDF/image preview
-- **PYQ Management** — Upload previous year question papers with linked solutions
-- **Handouts** — Course handout uploads with inline preview
-- **Study Plans** — Per-course Markdown editor with live preview
-- **Assignments** — Create assignment workspace folders, open in Cursor IDE
-- **AI Integration** — Auto-transcribe uploaded PDFs via Gemini OCR; one-click AI prompts referencing your lecture notes for Cursor
-- **Calendar** — Month view with color-coded exams and deadlines
-- **Dark Mode** — Toggle in sidebar
-- **PPTX to PDF** — Auto-converts Office documents to PDF on upload (requires LibreOffice)
+Everything stays on your machine. No accounts, no cloud, no one else sees any of it.
 
-## Tech Stack
+## What you can do with it
 
-- Next.js 16 (App Router) + React 19 + TypeScript
-- Tailwind CSS 4
-- @dnd-kit for drag-and-drop
-- File-based storage (JSON + disk files, no database)
-- Single-user, runs locally
+**See what's next.** The dashboard shows upcoming exams and deadlines sorted by date, so you always know what's this week, what's next week, and what to stop worrying about.
 
-## Setup
+**Track every grade.** Set up your own grading components for each course — quizzes, midsem, project, whatever your prof uses, with their real weightages. Enter marks as you get them and see your weighted percentage update live.
+
+**Keep your notes organized.** Upload slides, handouts, past papers, and your own notes. Sort them into folders. Drag to reorder. Preview PDFs and images inline without downloading.
+
+**Plan your studying.** Each course gets its own Markdown notebook — write out your study plan, topic breakdowns, or anything else you want to keep with the course.
+
+**Let AI help you study.** If you use Cursor, one click hands your course notes to the AI with a ready-made prompt: "help me prep for the exam", "explain this lecture in depth", "solve these past papers", and so on.
+
+**Calendar view.** Month-at-a-glance of every exam and deadline, color-coded.
+
+**Dark mode.** Of course.
+
+## Getting started
+
+You'll need [Node.js](https://nodejs.org) installed. Then:
 
 ```bash
-# Install dependencies
+git clone https://github.com/aryanjain1891/acads-intel.git
+cd acads-intel
 npm install
-
-# Copy env file and add your Gemini API key (optional, for PDF OCR)
-cp .env.example .env.local
-
-# Start dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-On first run, the app creates `data/`, `content/`, and `assignments/` directories automatically as you add courses and resources.
+The first time you open it, you'll see a welcome screen. Click **+ Add Course** and you're off.
 
-### Optional: PPTX to PDF conversion
+### Optional: AI-powered PDF transcription
 
-To auto-convert `.pptx`, `.docx`, and other Office formats to PDF on upload, install LibreOffice:
+If you upload PDF lecture notes and want the app to auto-extract the text (so you can search it and feed it to an AI later), add a free [Gemini API key](https://aistudio.google.com/app/apikey):
+
+```bash
+cp .env.example .env.local
+# open .env.local and paste your key
+```
+
+### Optional: PowerPoint and Word support
+
+To automatically convert `.pptx`, `.docx`, and other Office files to PDF when you upload them, install LibreOffice:
 
 ```bash
 # macOS
 brew install --cask libreoffice
 
-# Ubuntu/Debian
+# Ubuntu / Debian
 sudo apt install libreoffice
 ```
 
-## Storage Layout
+If you skip this, PPTX and DOCX uploads still work — they just won't render inline.
+
+## Where your stuff lives
+
+Everything is saved in plain files inside the project folder — JSON for structured data, your actual PDFs and notes sitting on disk exactly as you uploaded them. Delete the folder and it's all gone. Copy the folder and you've backed it up.
+
+## For developers
+
+<details>
+<summary>Tech details</summary>
+
+Built with Next.js 16, React 19, TypeScript, and Tailwind. File-based storage — no database to set up. Runs as a local dev server; intended for one person on one machine.
 
 ```
-data/              # JSON data files (auto-created)
-  courses.json
-  exams.json
-  scores.json
-  resources.json
-  handouts.json
-  deadlines.json
-  resource-folders.json
-
-content/           # Uploaded files (auto-created)
-  handouts/{courseId}/
-  resources/{courseId}/
-  plans/{courseId}.md
-
-assignments/       # Assignment workspaces (auto-created)
-  {courseId}/{slug}/
+data/           JSON for courses, exams, scores, deadlines, resources metadata
+content/        uploaded files (handouts, resources, study plans)
+assignments/    assignment workspace folders
 ```
+
+All three directories are created on first use and are gitignored.
+
+</details>
 
 ## License
 

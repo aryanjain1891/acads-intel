@@ -81,7 +81,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted">Semester 4-2 at a glance</p>
+          <p className="text-sm text-muted">Your semester at a glance</p>
         </div>
         <button
           onClick={() => setShowAddCourse(true)}
@@ -91,7 +91,23 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {courses.length === 0 && (
+        <section className="rounded-2xl border border-border bg-surface p-8">
+          <h2 className="text-xl font-bold">Welcome 👋</h2>
+          <p className="mt-2 text-sm text-muted">
+            Acads Intel keeps your semester in one place — courses, exams, scores, lecture notes, handouts, study plans, and assignments.
+          </p>
+          <ol className="mt-4 space-y-2 text-sm">
+            <li><span className="font-semibold">1.</span> Click <span className="font-medium">+ Add Course</span> (top right) to add your first subject.</li>
+            <li><span className="font-semibold">2.</span> Open the course to set up its grading components, upload resources, and plan your studies.</li>
+            <li><span className="font-semibold">3.</span> Add exam dates and deadlines — they&apos;ll show up on your dashboard and calendar.</li>
+          </ol>
+          <p className="mt-4 text-xs text-muted">All your data stays on your machine. Nothing is uploaded anywhere.</p>
+        </section>
+      )}
+
       {/* Upcoming */}
+      {courses.length > 0 && (
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Upcoming</h2>
         {upcoming.length === 0 ? (
@@ -137,15 +153,13 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+      )}
 
       {/* Course Cards */}
+      {courses.length > 0 && (
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Courses</h2>
-        {courses.length === 0 ? (
-          <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted">
-            No courses yet. Click &quot;Add Course&quot; to get started.
-          </div>
-        ) : (
+        {(
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sortedCourses.map((c) => {
               const sc = courseScore(c.id);
@@ -180,6 +194,7 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+      )}
 
       {/* Add Course Modal */}
       <Modal open={showAddCourse} onClose={() => setShowAddCourse(false)} title="Add Course">

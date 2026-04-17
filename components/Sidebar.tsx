@@ -103,7 +103,7 @@ export default function Sidebar() {
       }`}
     >
       <div className="flex items-center justify-between p-4">
-        {!collapsed && <h1 className="text-lg font-bold tracking-tight">4-2 Acads</h1>}
+        {!collapsed && <h1 className="text-lg font-bold tracking-tight">Acads Intel</h1>}
         <button
           onClick={() => setCollapsed((c) => !c)}
           className="rounded-lg p-1.5 text-muted hover:bg-surface-hover hover:text-foreground"

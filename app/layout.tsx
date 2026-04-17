@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "4-2 Acads",
-  description: "Academic tracker for semester 4-2",
+  title: "Acads Intel",
+  description: "Local-first academic tracker for your semester",
 };
 
 export default function RootLayout({
