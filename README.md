@@ -18,11 +18,7 @@ Everything stays on your machine. No accounts, no cloud, no one else sees any of
 
 **Calendar.** Month view with every exam and deadline, color-coded.
 
-**Study plans.** A Markdown notebook per course — write out your plan for the term, topic breakdowns, anything you want to keep next to the course.
-
-**Assignments.** Create a folder per assignment. Open it in Finder/Explorer or any editor.
-
-**AI helpers.** Every course page has one-click prompts — "help me prep for my exam", "summarize the modules", "solve these past papers". Click, paste into Claude/ChatGPT/Cursor/whatever, attach your files, done. The app doesn't lock you into any one tool.
+**Notice board.** Per course. Auto-pulls course-related emails from Gmail using sender/subject filters you set, accepts manual paste of WhatsApp exports or `.eml` files, and uses Gemini to compile any subset of them into a single consolidated notice. Tick checkboxes to pick which notices feed the compile, then star the result to keep it — saved notices stay around (collapsible) while the live output is replaced on each new compile. Optional — works only if you connect Gmail and/or paste content yourself.
 
 **Dark mode.** Obviously.
 
@@ -41,7 +37,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) and click **+ Add Course**.
 
-That's it. Your data lives in `data/`, `content/`, and `assignments/` folders inside the project — all created automatically as you use the app.
+That's it. Your data lives in `data/` and `content/` folders inside the project — all created automatically as you use the app.
 
 ### Optional: AI transcription of your PDFs
 
@@ -55,6 +51,21 @@ cp .env.example .env.local
 ```
 
 Skip this and every other feature still works — you just won't get auto-transcription.
+
+### Optional: Connect Gmail for the notice board
+
+The per-course notice board can auto-fetch course emails from your Gmail using sender/subject filters you set. Setup is one-time and runs entirely on your laptop.
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) → create a project (or pick an existing one) → enable the **Gmail API**.
+2. Go to **APIs & Services → Credentials** → **Create credentials → OAuth client ID** → application type **Web application**.
+3. Add authorized redirect URI: `http://localhost:3000/api/auth/google/callback`.
+4. The first time you go through OAuth, Google will warn that the app is unverified — that's expected for a personal local app. Click "Advanced" → "Go to (unsafe)".
+5. Copy the **Client ID** and **Client Secret** into Acads Intel → Settings → Gmail. Restart the dev server.
+6. Click **Connect Gmail** → consent → done.
+7. On any course page, click **⚙ Match patterns** to set sender substrings (e.g. `nalanda@bits-pilani.ac.in`), subject keywords (e.g. `CS F211`), and an optional start date. Then **↻ Refresh from Gmail** pulls matching messages into the notice board.
+8. Tick checkboxes next to the notices you want to compile, write a prompt (or leave blank for the default), click **Compile** — Gemini returns one consolidated notice with a title and markdown body. Click **⭐ Save** to keep it permanently; the live output is otherwise replaced on the next compile.
+
+The app requests only the read-only Gmail scope. Your refresh token sits in `data/google-auth.json` (gitignored). Disconnect anytime from Settings.
 
 ### Optional: Better PowerPoint previews
 
@@ -74,9 +85,8 @@ sudo apt install libreoffice
 
 Everything sits as normal files inside the project folder:
 
-- `data/` — small JSON files for courses, exams, scores, deadlines
-- `content/` — your uploaded PDFs, slides, notes, study plans
-- `assignments/` — one folder per assignment, yours to organize
+- `data/` — small JSON files for courses, exams, scores, deadlines, notices, saved notices
+- `content/` — your uploaded PDFs, slides, notes, handouts
 
 Back up the whole project folder and you've backed up everything. Delete it and it's all gone. No database, no cloud sync, nothing hidden.
 
@@ -105,13 +115,12 @@ Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind 4. File-based
 ```
 app/         Next.js pages and API routes
 components/  shared UI
-lib/         storage, AI helpers, types
-data/        JSON for courses, exams, scores, deadlines, resources metadata
+lib/         storage, AI helpers, Gmail OAuth, types
+data/        JSON for courses, exams, scores, deadlines, resources, notices, oauth tokens
 content/     uploaded files
-assignments/ assignment workspaces
 ```
 
-All personal data directories (`data/`, `content/`, `assignments/`) are gitignored.
+All personal data directories (`data/`, `content/`) are gitignored.
 
 </details>
 

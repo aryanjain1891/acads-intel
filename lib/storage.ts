@@ -8,7 +8,6 @@ const execFileAsync = promisify(execFile);
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_DIR = path.join(process.cwd(), "content");
-const ASSIGNMENTS_DIR = path.join(process.cwd(), "assignments");
 
 export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024; // 500 MB
 
@@ -62,21 +61,6 @@ export async function updateJSON<T>(
   } finally {
     await release();
   }
-}
-
-export async function readPlan(courseId: string): Promise<string> {
-  const filePath = path.join(CONTENT_DIR, "plans", `${courseId}.md`);
-  try {
-    return await fs.readFile(filePath, "utf-8");
-  } catch {
-    return "";
-  }
-}
-
-export async function writePlan(courseId: string, content: string): Promise<void> {
-  const dir = path.join(CONTENT_DIR, "plans");
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, `${courseId}.md`), content, "utf-8");
 }
 
 // Optional LibreOffice integration: if soffice is present on the machine, we
@@ -182,11 +166,10 @@ export async function deleteFile(relativePath: string): Promise<void> {
   }
 }
 
-export async function deleteDir(relativePath: string, root: "content" | "assignments"): Promise<void> {
-  const base = root === "content" ? CONTENT_DIR : ASSIGNMENTS_DIR;
-  const target = path.join(base, relativePath);
+export async function deleteDir(relativePath: string): Promise<void> {
+  const target = path.join(CONTENT_DIR, relativePath);
   try {
-    assertInside(base, target);
+    assertInside(CONTENT_DIR, target);
     await fs.rm(target, { recursive: true, force: true });
   } catch {
     // best-effort
@@ -195,23 +178,6 @@ export async function deleteDir(relativePath: string, root: "content" | "assignm
 
 export async function getFilePath(relativePath: string): Promise<string> {
   return path.join(CONTENT_DIR, relativePath);
-}
-
-export async function listAssignments(courseId: string): Promise<string[]> {
-  const dir = path.join(ASSIGNMENTS_DIR, courseId);
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    return entries.filter((e) => e.isDirectory()).map((e) => e.name);
-  } catch {
-    return [];
-  }
-}
-
-export async function createAssignment(courseId: string, slug: string): Promise<void> {
-  const dir = path.join(ASSIGNMENTS_DIR, courseId, slug);
-  await fs.mkdir(dir, { recursive: true });
-  const readme = path.join(dir, "README.md");
-  await fs.writeFile(readme, `# ${slug}\n\nAssignment workspace.\n`, "utf-8");
 }
 
 export function getAbsolutePath(...segments: string[]): string {

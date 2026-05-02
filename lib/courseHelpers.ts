@@ -15,6 +15,9 @@ export async function deleteHandout(id: string) {
 export async function deleteDeadline(id: string) {
   return apiDelete(`/api/deadlines/${id}`);
 }
+export async function deleteNotice(id: string) {
+  return apiDelete(`/api/notices/${id}`);
+}
 
 export function isPreviewable(fileType: string | null, url: string) {
   if (!fileType && !url) return false;

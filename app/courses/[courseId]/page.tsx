@@ -2,16 +2,14 @@
 
 import { use, useEffect, useState, useCallback } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import PromptButton from "@/components/PromptButton";
 import { useToast } from "@/components/Toast";
 import ExamsSection from "@/components/course/ExamsSection";
 import ScoresSection from "@/components/course/ScoresSection";
 import ResourcesSection from "@/components/course/ResourcesSection";
 import HandoutsSection from "@/components/course/HandoutsSection";
-import StudyPlanSection from "@/components/course/StudyPlanSection";
-import AssignmentsSection from "@/components/course/AssignmentsSection";
-import { deleteExam, deleteScore, deleteResource, deleteHandout, deleteDeadline } from "@/lib/courseHelpers";
-import type { Course, Exam, EvalComponent, Resource, Handout, Deadline } from "@/lib/types";
+import NoticesSection from "@/components/course/NoticesSection";
+import { deleteExam, deleteScore, deleteResource, deleteHandout, deleteDeadline, deleteNotice } from "@/lib/courseHelpers";
+import type { Course, Exam, EvalComponent, Resource, Handout, Deadline, Notice, SavedNotice } from "@/lib/types";
 
 export default function CourseDetail({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params);
@@ -21,9 +19,10 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
   const [resources, setResources] = useState<Resource[]>([]);
   const [handouts, setHandouts] = useState<Handout[]>([]);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
-  const [plan, setPlan] = useState("");
-  const [assignments, setAssignments] = useState<string[]>([]);
   const [persistedFolders, setPersistedFolders] = useState<string[]>([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [savedNotices, setSavedNotices] = useState<SavedNotice[]>([]);
+  const [gmailConnected, setGmailConnected] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState<{ type: string; id: string; name: string } | null>(null);
   const [openPreviews, setOpenPreviews] = useState<Set<string>>(new Set());
@@ -42,12 +41,9 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     fetch(`/api/resource-folders?courseId=${courseId}`).then((r) => r.json()).then((data: { name: string }[]) => setPersistedFolders(data.map((f) => f.name))).catch(() => {});
     fetch(`/api/handouts?courseId=${courseId}`).then((r) => r.json()).then(setHandouts).catch(() => {});
     fetch(`/api/deadlines?courseId=${courseId}`).then((r) => r.json()).then(setDeadlines).catch(() => {});
-    fetch(`/api/plans/${courseId}`).then((r) => r.json()).then((d: { content: string; path?: string }) => {
-      setPlan(d.content);
-    }).catch(() => {});
-    fetch(`/api/assignments/${courseId}`).then((r) => r.json()).then((d: { assignments: string[]; basePath: string; projectPath: string }) => {
-      setAssignments(d.assignments);
-    }).catch(() => {});
+    fetch(`/api/notices?courseId=${courseId}`).then((r) => r.json()).then(setNotices).catch(() => {});
+    fetch(`/api/saved-notices?courseId=${courseId}`).then((r) => r.json()).then(setSavedNotices).catch(() => {});
+    fetch(`/api/auth/google/status`).then((r) => r.json()).then((d: { connected: boolean }) => setGmailConnected(!!d.connected)).catch(() => {});
     fetch(`/api/deep-explain/status?courseId=${courseId}`).then((r) => r.json()).then(setExplainerStatus).catch(() => {});
   }, [courseId]);
 
@@ -91,6 +87,7 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
     else if (type === "resource") { res = await deleteResource(id); label = "Resource deleted"; }
     else if (type === "handout") { res = await deleteHandout(id); label = "Handout deleted"; }
     else if (type === "deadline") { res = await deleteDeadline(id); label = "Deadline deleted"; }
+    else if (type === "notice") { res = await deleteNotice(id); label = "Notice deleted"; }
     if (res) {
       if (!res.ok) { toast(res.error, "error"); return; }
       toast(label);
@@ -109,32 +106,6 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
           </div>
           <h1 className="text-2xl font-bold">{course.name}</h1>
           <p className="text-sm text-muted">{course.instructor}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <PromptButton
-            label="Ask about notes"
-            icon="💬"
-            prompt={`I'll attach my course transcripts. Please answer this question using them: `}
-            small
-          />
-          <PromptButton
-            label="Summarize modules"
-            icon="📝"
-            prompt={`I'll attach my course module notes. Please summarize the key concepts from all the modules.`}
-            small
-          />
-          <PromptButton
-            label="Exam prep"
-            icon="📖"
-            prompt={`I'll attach my course module notes. Please help me prepare for my upcoming exam — list important topics, formulas, and concepts to review.`}
-            small
-          />
-          <PromptButton
-            label="Deep Explain"
-            icon="🧠"
-            prompt={`I'll attach a lecture transcript. Please create a comprehensive deep explanation. Start from the beginning and explain every concept in depth. Include a notation/abbreviation table, numbered "Part N:" sections, step-by-step walkthroughs of every example, and "Feel:" callouts with intuitive analogies. Cover everything — do not skip or summarize any topic.`}
-            small
-          />
         </div>
       </div>
 
@@ -177,17 +148,14 @@ export default function CourseDetail({ params }: { params: Promise<{ courseId: s
         }
       />
 
-      <StudyPlanSection
+      <NoticesSection
         courseId={courseId}
-        plan={plan}
-        setPlan={setPlan}
+        course={course}
+        notices={notices}
+        savedNotices={savedNotices}
+        gmailConnected={gmailConnected}
         reload={reload}
-      />
-
-      <AssignmentsSection
-        courseId={courseId}
-        assignments={assignments}
-        reload={reload}
+        setConfirmDelete={setConfirmDelete}
       />
 
       <ConfirmDialog

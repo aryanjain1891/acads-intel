@@ -95,7 +95,7 @@ export default function Dashboard() {
         <section className="rounded-2xl border border-border bg-surface p-8">
           <h2 className="text-xl font-bold">Welcome 👋</h2>
           <p className="mt-2 text-sm text-muted">
-            Acads Intel keeps your semester in one place — courses, exams, scores, lecture notes, handouts, study plans, and assignments.
+            Acads Intel keeps your semester in one place — courses, exams, scores, lecture notes, and handouts.
           </p>
           <ol className="mt-4 space-y-2 text-sm">
             <li><span className="font-semibold">1.</span> Click <span className="font-medium">+ Add Course</span> (top right) to add your first subject.</li>

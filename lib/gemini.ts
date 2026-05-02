@@ -138,6 +138,68 @@ export async function generateDeepExplanation(
   return text;
 }
 
+const NOTICE_COMPILE_SYSTEM = `You are compiling a per-course notice board from a mix of email, WhatsApp messages, and free-form text. Produce exactly one consolidated notice that:
+- Has a short, specific title (e.g. "CS F211 — week of April 14" or "Endsem and quiz schedule").
+- Has a Markdown body that preserves every concrete detail from the sources: dates, times, names, room numbers, deadlines, links, attachment names. Group related announcements under headings. If a detail is ambiguous or conflicting across sources, surface the ambiguity rather than picking one. Do not wrap the body in code fences.
+Return only the JSON object specified by the response schema.`;
+
+export interface CompiledNotice {
+  title: string;
+  body: string;
+}
+
+export async function compileNotices(userPrompt: string, body: string): Promise<CompiledNotice> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY not set");
+  }
+
+  const prompt = `${NOTICE_COMPILE_SYSTEM}\n\n---\n\nUser instruction:\n${userPrompt.trim() || "Compile all announcements into one consolidated notice."}\n\n---\n\nNotices:\n\n${body}`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 32768,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING" },
+              body: { type: "STRING" },
+            },
+            required: ["title", "body"],
+          },
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+  if (!text) throw new Error("Empty response from Gemini");
+
+  let parsed: { title?: unknown; body?: unknown };
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("Gemini returned non-JSON output");
+  }
+  const title = typeof parsed.title === "string" ? parsed.title.trim() : "";
+  const compiledBody = typeof parsed.body === "string" ? parsed.body.trim() : "";
+  if (!title || !compiledBody) throw new Error("Gemini response missing title or body");
+  return { title, body: compiledBody };
+}
+
 export function getDeepExplainOutputPath(transcriptPath: string): string {
   const ext = path.extname(transcriptPath);
   const base = path.basename(transcriptPath, ext);

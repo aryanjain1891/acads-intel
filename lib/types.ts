@@ -1,3 +1,9 @@
+export interface MatchPatterns {
+  senders?: string[];
+  subjectKeywords?: string[];
+  sinceDate?: string; // ISO YYYY-MM-DD; emails before this are skipped
+}
+
 export interface Course {
   id: string;
   name: string;
@@ -5,6 +11,28 @@ export interface Course {
   instructor: string;
   credits: number;
   order?: number;
+  matchPatterns?: MatchPatterns;
+}
+
+export interface Notice {
+  id: string;
+  courseId: string;
+  source: "gmail" | "paste" | "upload";
+  externalId?: string;
+  filename?: string;
+  from?: string;
+  subject?: string;
+  date?: string;
+  rawText: string;
+  createdAt: string;
+}
+
+export interface SavedNotice {
+  id: string;
+  courseId: string;
+  title: string;
+  body: string;
+  savedAt: string;
 }
 
 export interface Exam {

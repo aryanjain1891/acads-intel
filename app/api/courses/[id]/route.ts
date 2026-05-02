@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateJSON, deleteDir } from "@/lib/storage";
-import type { Course, Exam, EvalComponent, Deadline, Resource, Handout, ResourceFolder } from "@/lib/types";
+import type { Course, Exam, EvalComponent, Deadline, Resource, Handout, ResourceFolder, Notice, SavedNotice, MatchPatterns } from "@/lib/types";
+
+function sanitizeMatchPatterns(input: unknown): MatchPatterns | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = input as { senders?: unknown; subjectKeywords?: unknown; sinceDate?: unknown };
+  const toArr = (v: unknown): string[] | undefined => {
+    if (!Array.isArray(v)) return undefined;
+    const cleaned = v
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .slice(0, 50);
+    return cleaned.length > 0 ? cleaned : [];
+  };
+  const senders = toArr(raw.senders);
+  const subjectKeywords = toArr(raw.subjectKeywords);
+  const sinceDate =
+    typeof raw.sinceDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.sinceDate.trim())
+      ? raw.sinceDate.trim()
+      : undefined;
+  return { senders, subjectKeywords, sinceDate };
+}
 
 export async function PUT(
   req: NextRequest,
@@ -8,7 +29,8 @@ export async function PUT(
 ) {
   const { id } = await params;
   const body = await req.json();
-  const { name, code, instructor, credits } = body;
+  const { name, code, instructor, credits, matchPatterns } = body;
+  const cleanedPatterns = matchPatterns !== undefined ? sanitizeMatchPatterns(matchPatterns) : undefined;
 
   let updated: Course | null = null;
   await updateJSON<Course>("courses.json", (courses) => {
@@ -20,6 +42,7 @@ export async function PUT(
       ...(code !== undefined && { code: String(code) }),
       ...(instructor !== undefined && { instructor: String(instructor) }),
       ...(credits !== undefined && { credits: Number(credits) }),
+      ...(matchPatterns !== undefined && { matchPatterns: cleanedPatterns }),
     };
     courses[index] = updated;
     return courses;
@@ -50,12 +73,12 @@ export async function DELETE(
   await updateJSON<Resource>("resources.json", (items) => items.filter((r) => r.courseId !== id));
   await updateJSON<Handout>("handouts.json", (items) => items.filter((h) => h.courseId !== id));
   await updateJSON<ResourceFolder>("resource-folders.json", (items) => items.filter((f) => f.courseId !== id));
+  await updateJSON<Notice>("notices.json", (items) => items.filter((n) => n.courseId !== id));
+  await updateJSON<SavedNotice>("saved-notices.json", (items) => items.filter((s) => s.courseId !== id));
 
-  // Clean up uploaded files and assignment workspaces. Best-effort.
-  await deleteDir(`resources/${id}`, "content");
-  await deleteDir(`handouts/${id}`, "content");
-  await deleteDir(`plans/${id}.md`, "content");
-  await deleteDir(id, "assignments");
+  // Clean up uploaded files. Best-effort.
+  await deleteDir(`resources/${id}`);
+  await deleteDir(`handouts/${id}`);
 
   return NextResponse.json({ success: true });
 }
